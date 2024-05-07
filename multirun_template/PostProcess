@@ -1,0 +1,18 @@
+# Iterate through directories
+file_path="postProcessing/forces/0/force.dat"
+csv_file="output_forces.csv"
+echo "#alpha slip Time        	total_x total_y total_z	pressure_x pressure_y pressure_z	viscous_x viscous_y viscous_z" >> "$csv_file"
+for alpha_dir in $(find . -type d -name "alpha_*"); do
+    for slip_dir in $(find "$alpha_dir" -type d -name "navier_slip_*"); do
+        # Extract alpha and slip values from directory names
+        alpha=$(basename "$alpha_dir" | cut -d "_" -f 2)
+        slip=$(basename "$slip_dir" | cut -d "_" -f 3)
+
+        # Get the last line of the file
+        last_line=$(tail -n 1 "$slip_dir/$file_path")
+
+        # Append to CSV
+        echo "$alpha $slip $last_line" >> "$csv_file"
+     #    echo "$alpha,$slip,$last_line"
+    done
+done

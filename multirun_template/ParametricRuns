@@ -1,0 +1,47 @@
+
+Res=("10")
+alphas=("1e-6" "1e-4" "1e-3" "1e-2" "0.5e-1" "1e-1" "15e-1")
+lambdas=("0" "1e-4" "1e-1")
+for Re in  ${Res[@]}
+do
+     echo "#########################################"
+     echo "Re = $Re ..."
+     echo "#########################################"
+     Re_dir=Re_$alpha
+     if ![ -d $Re_dir ]; then
+          mkdir $alpha_dir
+     fi
+     
+     for alpha in  ${alphas[@]}
+     do
+          echo "Running alpha = $alpha ..."
+          alpha_dir=alpha_$alpha
+          if [ -d $alpha_dir ]; then
+               echo "Directory $alpha_dir already exist, skipping ..."
+               continue
+          fi
+          mkdir $alpha_dir
+          cd $alpha_dir
+          for lambda in ${lambdas[@]}
+          do
+               echo "Re = $Re, alpha = $alpha, lambda=$lambda"
+               dir=navier_slip_$lambda
+               if [ -d $dir ]; then
+                    echo "Directory $dir already exist, skipping ..."
+                    continue
+               fi
+               echo "    Running lambda = $lambda"
+               cp -r ../template $dir
+               # (cd test && ./PrepareCase)
+               cd $dir
+               sed "s/alpha 1e-4;/alpha $alpha;/g" -i paramsDict
+               sed "s/NavierSlipLenght 1e-2;/NavierSlipLenght $lambda;/g" -i paramsDict
+               sed "s/Re 1e-2;/Re $Re;/g" -i paramsDict
+               # ./PrepareCase
+               # ./AllrunParallel
+               sbatch launchOFValidationNavierSlip.sh
+               cd ..
+          done
+          cd ..
+     done
+done 

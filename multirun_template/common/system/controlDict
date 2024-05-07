@@ -1,0 +1,87 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include "../paramsDict"
+
+application     simpleFoam;
+
+libs            
+(
+"libfiniteVolumeIFPEN.so"
+// libshearFree
+libzeroShearPatchField
+);
+
+startFrom       latestTime;
+// startFrom       startTime;
+
+startTime       0;
+
+stopAt          endTime;
+
+endTime         20000;
+
+// deltaT          0.0025;
+deltaT          1;
+
+writeControl    adjustableRunTime;
+
+// writeInterval   0.2;
+writeInterval   200;
+// writeInterval   1;
+
+purgeWrite      0;
+
+writeFormat     ascii;
+
+writePrecision  6;
+
+writeCompression off;
+
+timeFormat      general;
+
+timePrecision   6;
+
+runTimeModifiable yes;
+
+adjustTimeStep  yes;
+
+maxCo           0.9;
+
+// maxDeltaT       1.0e-3;
+maxDeltaT       1.0;
+
+graphFormat     raw;
+
+
+functions
+{
+    // #include "streamlines"
+    #include "forceCoeffs"
+
+    forces{
+        enabled      $calculateForces;
+        #includeEtc "caseDicts/postProcessing/forces/forcesIncompressible.cfg"
+        
+        rhoInf      $rhoInf;
+        patches     (sphere);
+        
+        CofR        (0 0 0);
+        pitchAxis   (0 1 0);
+    }
+}
+
+// ************************************************************************* //

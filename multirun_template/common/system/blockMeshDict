@@ -1,0 +1,102 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM Extend Project: Open Source CFD        |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      blockMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include "../paramsDict"
+
+mergeType points;   // Wedge geometry - Merge points instead of topology
+
+scale   1;
+
+vertices
+(
+    (0 0 0)
+    ($l 0 0)
+    ($l $l 0)
+    (0 $l 0)
+    (0 0 $l)
+    ($l 0 $l)
+    ($l $l $l)
+    (0 $l $l)
+);
+
+blocks
+(
+    hex (0 1 2 3 4 5 6 7) ($Nx $Nx $Nx) simpleGrading (1 1 1)
+);
+
+edges
+(
+);
+
+boundary
+(
+    patch0_half0
+    {
+        type patch;
+        faces
+        (
+            (0 3 2 1)
+        );
+    }
+    patch0_half1
+    {
+        type patch;
+        faces
+        (
+            (4 5 6 7)
+        );
+    }
+    patch1_half0
+    {
+        type patch;
+        faces
+        (
+            (0 4 7 3)
+        );
+    }
+    patch1_half1
+    {
+        type patch;
+        faces
+        (
+            (2 6 5 1)
+        );
+    }
+    patch2_half0
+    {
+        type patch;
+        faces
+        (
+            (3 7 6 2)
+        );
+    }
+    patch2_half1
+    {
+        type patch;
+        faces
+        (
+            (1 5 4 0)
+        );
+    }
+);
+
+mergePatchPairs
+(
+);
+
+
+
+// ************************************************************************* //

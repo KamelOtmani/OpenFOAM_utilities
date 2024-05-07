@@ -1,0 +1,36 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+
+forceCoeffs1
+{
+    enabled          $calculateForcesCoeffs;
+    // Mandatory entries
+    type            forceCoeffs;
+    libs            ("libforces.so");
+    
+    writeControl    writeTime;
+    // timeInterval    1;
+    
+    log             yes;
+    
+    patches         (sphere);
+
+    magUInf     $U_z;
+    // rhoInf      $rhoInf;
+    lRef        $d_b;
+    Aref        #eval{pi() * pow($d_b_2,2)};
+
+    liftDir     (0 0 1);
+    dragDir     (0 1 0);
+
+    CofR        (0 0 0);
+    pitchAxis   (0 1 0);
+
+
+    #includeEtc "caseDicts/postProcessing/forces/forceCoeffsIncompressible.cfg"
+}

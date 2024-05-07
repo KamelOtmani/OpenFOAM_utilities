@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "*Dict": "OpenFOAM",
+        "*Properties": "OpenFOAM",
+        "fvSchemes": "OpenFOAM",
+        "fvSolution": "OpenFOAM",
+        "**/constant/g": "OpenFOAM",
+        "**/0/*": "OpenFOAM",
+        "**/0.orig/*": "OpenFOAM",
+        "*.air": "OpenFOAM",
+        "*.water": "OpenFOAM",
+        "fvPatchFieldNew.C": "cpp"
+    }
+}

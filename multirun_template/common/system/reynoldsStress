@@ -1,0 +1,7 @@
+renoldsStress1
+{   
+    type        reynoldsStress;
+    libs        (libreynoldsStressFunctionObject);
+    UName       U;
+    log         yes;
+}

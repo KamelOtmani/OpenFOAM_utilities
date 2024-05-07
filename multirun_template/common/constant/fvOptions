@@ -1,0 +1,34 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      fvOptions;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include "../paramsDict"
+
+momentumSource
+{
+    enabled         true;
+    type            meanVelocityForce;
+    // type            patchMeanVelocityForce;
+    // patch           patch0_half0_cyclic;
+
+    // timeStart       0.0;
+    // duration        3000;
+    selectionMode   all;
+    fields          (U);
+    Ubar            (0 $U_z 0);
+}
+
+
+// ************************************************************************* //

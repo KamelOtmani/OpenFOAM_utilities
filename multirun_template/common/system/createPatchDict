@@ -1,0 +1,145 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v1906                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      createPatchDict;
+}
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+pointSync false;
+
+tol 1e-3;
+
+patches
+(
+   {
+      // Name of new patch
+      name sphere;
+      // Type of new patch
+      patchInfo
+      {
+         type zeroShear;
+         // slipLength      uniform $NavierSlipLenght;
+      }
+      // How to construct: either from 'patches' or 'set'
+      constructFrom patches;
+      // If constructFrom = patches : names of patches. Wildcards allowed.
+      patches (sphere_sym);
+   }
+
+   {
+      // Name of new patch
+      name patch0_half0_cyclic;
+      // Type of new patch
+      patchInfo
+      {
+         type cyclicAMI;
+      //    transform translational;
+         matchTolerance $tol;
+         neighbourPatch patch0_half1_cyclic;
+         AMIMethod      nearestFaceAMI;
+      }
+      // How to construct: either from 'patches' or 'set'
+      constructFrom patches;
+      // If constructFrom = patches : names of patches. Wildcards allowed.
+      patches (patch0_half0);
+   }
+
+   {
+      // Name of new patch
+      name patch0_half1_cyclic;
+      // Type of new patch
+      patchInfo
+      {
+         type cyclicAMI;
+      //    transform translational;
+         matchTolerance $tol;
+         neighbourPatch patch0_half0_cyclic;
+         AMIMethod      nearestFaceAMI;
+      }
+      // How to construct: either from 'patches' or 'set'
+      constructFrom patches;
+      // If constructFrom = patches : names of patches. Wildcards allowed.
+      patches (patch0_half1);
+   }
+
+   {
+      // Name of new patch
+      name patch1_half0_cyclic;
+      // Type of new patch
+      patchInfo
+      {
+         type cyclicAMI;
+      //    transform translational;
+         matchTolerance $tol;
+         neighbourPatch patch1_half1_cyclic;
+         AMIMethod      nearestFaceAMI;
+      }
+      // How to construct: either from 'patches' or 'set'
+      constructFrom patches;
+      // If constructFrom = patches : names of patches. Wildcards allowed.
+      patches (patch1_half0);
+   }
+
+   {
+      // Name of new patch
+      name patch1_half1_cyclic;
+      // Type of new patch
+      patchInfo
+      {
+         type cyclicAMI;
+      //    transform translational;
+         matchTolerance $tol;
+         neighbourPatch patch1_half0_cyclic;
+         AMIMethod      nearestFaceAMI;
+      }
+      // How to construct: either from 'patches' or 'set'
+      constructFrom patches;
+      // If constructFrom = patches : names of patches. Wildcards allowed.
+      patches (patch1_half1);
+   }
+   {
+      // Name of new patch
+      name patch2_half0_cyclic;
+      // Type of new patch
+      patchInfo
+      {
+         type cyclicAMI;
+      //    transform translational;
+         matchTolerance $tol;
+         neighbourPatch patch2_half1_cyclic;
+         AMIMethod      nearestFaceAMI;
+      }
+      // How to construct: either from 'patches' or 'set'
+      constructFrom patches;
+      // If constructFrom = patches : names of patches. Wildcards allowed.
+      patches (patch2_half0);
+   }
+
+   {
+      // Name of new patch
+      name patch2_half1_cyclic;
+      // Type of new patch
+      patchInfo
+      {
+         type cyclicAMI;
+      //    transform translational;
+         matchTolerance $tol;
+         neighbourPatch patch2_half0_cyclic;
+         AMIMethod      nearestFaceAMI;
+      }
+      // How to construct: either from 'patches' or 'set'
+      constructFrom patches;
+      // If constructFrom = patches : names of patches. Wildcards allowed.
+      patches (patch2_half1);
+   }
+);

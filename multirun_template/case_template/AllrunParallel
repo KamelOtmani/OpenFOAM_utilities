@@ -1,0 +1,30 @@
+#!/bin/sh
+cd "${0%/*}" || exit                                # Run from this directory
+. ${WM_PROJECT_DIR:?}/bin/tools/RunFunctions        # Tutorial run functions
+#------------------------------------------------------------------------------
+
+restore0Dir
+
+runApplication setFields
+runApplication decomposePar -force
+mv log.decomposePar log.decomposeParRun
+runParallel renumberMesh -overwrite -parallel 
+
+runParallel $(getApplication) 
+runApplication reconstructPar -latestTime
+# clean the case for faster transfers
+rm -rf processor*
+rm -rf dynamic*
+
+# runApplication decomposePar -force
+# mv log.decomposePar log.decomposeParRun
+# runParallel renumberMesh -overwrite -parallel 
+
+# runParallel $(getApplication) 
+# & pyFoamPlotWatcher.py --with-courant --with-deltat --with-iterations \
+     # --progress \
+     # log.$(getApplication)/work/landalok/OpenFOAM/landalok-plus/run/dev/DNS/Results/fev_24/navierSlipSymmetry/scratch/navier_slip_0/system/snappyHexMeshDict /work/landalok/OpenFOAM/landalok-plus/run/dev/DNS/Results/fev_24/navierSlipSymmetry/scratch/navier_slip_0/system/meshQualityDict
+
+
+
+#------------------------------------------------------------------------------
