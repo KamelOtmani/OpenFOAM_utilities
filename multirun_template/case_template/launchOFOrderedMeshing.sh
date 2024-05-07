@@ -52,13 +52,3 @@ sed -i "s/^numberOfSubdomains.*;$/numberOfSubdomains ${SLURM_NTASKS};/" $PWD/sys
 # run
 # ./GenerateMesh
 ./PrepareCase
-./AllrunParallel
-
-# TODO: setup in flight postProcessing
-# Post process
-# file_path="postProcessing/forces/0/force.dat"
-# csv_file="output_forces.csv"
-# # Get the last line of the file
-# last_line=$(tail -n 1 "$slip_dir/$file_path")
-# # Append to CSV
-# echo "$alpha $slip $last_line" >> "$csv_file"

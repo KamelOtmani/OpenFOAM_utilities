@@ -1,47 +1,140 @@
+# !/bin/bash
+set -u # Treat unset variables as an error when substituting.
+# This script is used to generate the case for the ordered array of spheres
+# set the template for the name of the case (Re, alpha, lambda should will be appended)
+case_Name="ordered_array"
+Res=("1")
+alphas=("2e-1")
+# alphas=("0.5e-1")
+lambdas=("0" "1e-1")
+# Res=("1e-2" "1e-2" "1" "5" "10" "20" "40")
+# alphas=("1e-6" "1e-4" "1e-3" "1e-2" "0.5e-1" "1e-1" "1.5e-1")
+# lambdas=("0" "1e-4" "1e-1")
+template_dir="case_template"
+sbatch_mode=true
+mesh_job_ID=0
 
-Res=("10")
-alphas=("1e-6" "1e-4" "1e-3" "1e-2" "0.5e-1" "1e-1" "15e-1")
-lambdas=("0" "1e-4" "1e-1")
-for Re in  ${Res[@]}
-do
-     echo "#########################################"
-     echo "Re = $Re ..."
-     echo "#########################################"
-     Re_dir=Re_$alpha
-     if ![ -d $Re_dir ]; then
-          mkdir $alpha_dir
+# define a fuction that is run for each case that takes in the directory of the case
+
+function setup_parameters () {
+    local Re=$1
+    local alpha=$2
+    local lambda=$3
+    # replace the proper parameters
+    sed "s/Re 1e-2;/Re $Re;/g" -i paramsDict
+    sed "s/alpha 1e-4;/alpha $alpha;/g" -i paramsDict
+    sed "s/NavierSlipLenght 1e-2;/NavierSlipLenght $lambda;/g" -i paramsDict
+}
+function generate_mesh () {
+     # update the alpha
+     sed "s/alpha 1e-4;/alpha $alpha;/g" -i paramsDict
+     # check if we are in sbatch mode
+     # mesh_job_ID=0
+     if [ $sbatch_mode = true ]; then
+          # launch the mesh generation and get the ID
+          mesh_job_id=69
+          echo "launching sbatch depending on $mesh_job_id"
+          ./PrepareCase
+          return $mesh_job_id
+          # mesh_job_ID=$(launch_sbatch_and_get_id launchOFOrderedMeshing.sh)
+     else
+          # launch the mesh generation
+          echo "Generating mesh locally"
+          ./PrepareCase
+          return 420
      fi
-     
-     for alpha in  ${alphas[@]}
-     do
-          echo "Running alpha = $alpha ..."
-          alpha_dir=alpha_$alpha
-          if [ -d $alpha_dir ]; then
-               echo "Directory $alpha_dir already exist, skipping ..."
-               continue
+}
+
+function run_case () {
+     local mesh_job_id=$1
+     echo "global =$mesh_job_ID vs local=$mesh_job_id" 
+     # check if we are in sbatch mode
+     if [ $sbatch_mode = true ]; then
+     # do we have a valid mesh job ID ?
+          if [ $mesh_job_ID -eq 0 ]; then
+               echo "Mesh already exist, launching ..."
           fi
-          mkdir $alpha_dir
-          cd $alpha_dir
-          for lambda in ${lambdas[@]}
-          do
-               echo "Re = $Re, alpha = $alpha, lambda=$lambda"
-               dir=navier_slip_$lambda
-               if [ -d $dir ]; then
-                    echo "Directory $dir already exist, skipping ..."
-                    continue
-               fi
-               echo "    Running lambda = $lambda"
-               cp -r ../template $dir
-               # (cd test && ./PrepareCase)
-               cd $dir
-               sed "s/alpha 1e-4;/alpha $alpha;/g" -i paramsDict
-               sed "s/NavierSlipLenght 1e-2;/NavierSlipLenght $lambda;/g" -i paramsDict
-               sed "s/Re 1e-2;/Re $Re;/g" -i paramsDict
-               # ./PrepareCase
-               # ./AllrunParallel
-               sbatch launchOFValidationNavierSlip.sh
+          # launch the mesh generation and get the ID
+          # sbatch launchOF.sh --dependency=afterok:$mesh_job_ID
+          cp -rf ../../mesh/* .
+          echo "launching sbatch depending on $mesh_job_ID"
+          ./CleanExceptMesh
+          ./AllrunParallel
+     else
+          cp -rf ../../mesh/* .
+          ./CleanExceptMesh
+          ./AllrunParallel
+     fi
+}
+
+function launch_sbatch_and_get_id() {
+     script_name=$1
+    ret=$(sbatch $script_name)
+    ID=$(awk '{print $4}' <<< $ret)
+    echo "Launched $ID"
+    # return the id
+    return $ID
+}
+# echo the number of cases to be run
+echo "Number of cases to be run: ${#Res[@]} x ${#alphas[@]} x ${#lambdas[@]} = $(( ${#Res[@]} * ${#alphas[@]} * ${#lambdas[@]} ))"
+
+for alpha in  ${alphas[@]}
+do
+echo "#########################################"
+echo "alpha = $alpha ..."
+echo "#########################################"
+alpha_dir=alpha_$alpha
+if [ ! -d $alpha_dir ]; then
+     mkdir $alpha_dir
+fi
+(
+     cd $alpha_dir
+     # launch the mesh generation process
+     # check if the mesh directory exist
+     if [ ! -d mesh ]; then
+          # first copy the mesh template and copy the content of common into the new dir
+          # (
+               echo "Generating mesh ..."
+               mkdir mesh
+               cp -r ../$template_dir/* mesh/.
+               cp -r ../common/* mesh/.
+               cd mesh
+               mesh_job_ID=$(generate_mesh)
+               # generate_mesh
                cd ..
-          done
-          cd ..
+          # )
+     # else just echo that we are skipping the mesh generation
+     else
+          echo "Mesh directory already exist, skipping ..."
+     fi
+
+     for Re in  ${Res[@]}
+     do
+     (
+     echo "Running Re = $Re ..."
+     Re_dir=Re_$Re
+     # creat the directory if not exist
+     if [ ! -d $Re_dir ]; then
+          mkdir $Re_dir
+     fi
+     cd $Re_dir
+     for lambda in ${lambdas[@]}
+     do
+     dir="${case_Name}_Re_${Re}_alpha_${alpha}_lambda_${lambda}"
+     if [ -d $dir ]; then
+          echo "Directory $dir already exist, skipping ..."
+          continue
+     fi
+     (
+          cp -r ../../$template_dir $dir
+          cd $dir
+          echo "Re = $Re, alpha = $alpha, lambda=$lambda"
+          # make sure that we setup the parameters correctly
+          setup_parameters $Re $alpha $lambda
+          run_case $mesh_job_ID
+     )
      done
-done 
+     )
+     done
+)
+done

@@ -1,7 +1,7 @@
 
 // ----- MESH --------//
 // Coarse mesh = 80
-CellsPerDiameter                              30; // number of divisions
+CellsPerDiameter                              10; // number of divisions
 CellsBetweenRefinementLevels    15; // snappy cells between leveles
 RefinementLevels    3; // snappy cells between leveles
 // ------------------//
@@ -38,10 +38,10 @@ Nx          #calc"(int)($CellsPerDiameter * $l /($d_b*(pow(2,min($RefinementLeve
 // ----- Solution --------//
 // tolerences
 relativeTol     0.01;
-Utol       1e-07;
+Utol       1e-08;
 ptol       1e-08;
 // residues
-pres      1e-04;
+pres      1e-05;
 Ures      1e-05;
-NonOrthogonalCorrectors 2;
+NonOrthogonalCorrectors 3;
 // ------------------//
