@@ -71,6 +71,7 @@ functions
 {
     // #include "streamlines"
     #include "forceCoeffs"
+    #include "reynoldsStress"
 
     forces{
         enabled      $calculateForces;
