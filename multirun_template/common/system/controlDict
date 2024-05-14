@@ -20,7 +20,7 @@ application     simpleFoam;
 
 libs            
 (
-"libfiniteVolumeIFPEN.so"
+libfiniteVolumeIFPEN
 // libshearFree
 libzeroShearPatchField
 );

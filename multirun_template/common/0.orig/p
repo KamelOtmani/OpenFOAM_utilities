@@ -29,6 +29,26 @@ boundaryField
         // value           uniform 0;
     }
 
+    patch2_half0
+    {
+        type             uniformVelocityPressureJumpAMI;
+        patchType        cyclicAMI;
+        Ubar             $U_z; 
+        jumpTable        constant 1;
+        relaxationFactor $pressure_jump_relaxation_factor;
+        value            $internalField; 
+    }
+
+    patch2_half1
+    {
+        type             uniformVelocityPressureJumpAMI;
+        patchType        cyclicAMI;
+        Ubar             $U_z;      
+        jumpTable        constant -1;
+        relaxationFactor $pressure_jump_relaxation_factor;
+        value            $internalField; 
+    }
+    
     sphere
     {
         type               zeroShear;

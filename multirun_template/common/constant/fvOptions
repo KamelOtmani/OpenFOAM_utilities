@@ -18,7 +18,7 @@ FoamFile
 
 momentumSource
 {
-    enabled         true;
+    enabled         false;
     type            meanVelocityForce;
     // type            patchMeanVelocityForce;
     // patch           patch0_half0_cyclic;
