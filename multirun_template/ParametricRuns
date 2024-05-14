@@ -3,19 +3,18 @@ set -u # Treat unset variables as an error when substituting.
 # This script is used to generate the case for the ordered array of spheres
 # set the template for the name of the case (Re, alpha, lambda should will be appended)
 case_Name="ordered_array"
-Res=("1")
-alphas=("2e-1")
+Res=("1e-1" "1")
+alphas=("1e-2")
 # alphas=("0.5e-1")
-lambdas=("0" "1e-1")
+lambdas=("0")
 # Res=("1e-2" "1e-2" "1" "5" "10" "20" "40")
 # alphas=("1e-6" "1e-4" "1e-3" "1e-2" "0.5e-1" "1e-1" "1.5e-1")
 # lambdas=("0" "1e-4" "1e-1")
 template_dir="case_template"
 sbatch_mode=true
-mesh_job_ID=0
+export MESH_ID=0
 
 # define a fuction that is run for each case that takes in the directory of the case
-
 function setup_parameters () {
     local Re=$1
     local alpha=$2
@@ -25,41 +24,42 @@ function setup_parameters () {
     sed "s/alpha 1e-4;/alpha $alpha;/g" -i paramsDict
     sed "s/NavierSlipLenght 1e-2;/NavierSlipLenght $lambda;/g" -i paramsDict
 }
+
 function generate_mesh () {
      # update the alpha
      sed "s/alpha 1e-4;/alpha $alpha;/g" -i paramsDict
      # check if we are in sbatch mode
-     # mesh_job_ID=0
-     if [ $sbatch_mode = true ]; then
+     if [[ $sbatch_mode == true ]]; then
           # launch the mesh generation and get the ID
-          mesh_job_id=69
-          echo "launching sbatch depending on $mesh_job_id"
-          ./PrepareCase
-          return $mesh_job_id
-          # mesh_job_ID=$(launch_sbatch_and_get_id launchOFOrderedMeshing.sh)
+          # echo "launching sbatch depending on $mesh_job_id"
+          # ./PrepareCase
+          mesh_job_id=$(launch_sbatch_and_get_id launchOFOrderedMeshing.sh)
+          # mesh_job_id=3789
+          export MESH_ID=$mesh_job_id
+          echo "MESH_ID=$MESH_ID"
      else
           # launch the mesh generation
           echo "Generating mesh locally"
           ./PrepareCase
-          return 420
      fi
+     # return $mesh_job_id
 }
 
 function run_case () {
-     local mesh_job_id=$1
-     echo "global =$mesh_job_ID vs local=$mesh_job_id" 
+     echo "PWD = $PWD"
+     mesh_job_ID=$MESH_ID
      # check if we are in sbatch mode
-     if [ $sbatch_mode = true ]; then
+     if [[ $sbatch_mode == true ]]; then
      # do we have a valid mesh job ID ?
-          if [ $mesh_job_ID -eq 0 ]; then
+          if [[ $mesh_job_ID == 0 ]]; then
                echo "Mesh already exist, launching ..."
-          fi
+               # sbatch launchOF.sh
+          else
           # launch the mesh generation and get the ID
           # sbatch launchOF.sh --dependency=afterok:$mesh_job_ID
-          cp -rf ../../mesh/* .
-          echo "launching sbatch depending on $mesh_job_ID"
-          ./CleanExceptMesh
-          ./AllrunParallel
+          echo "launching sbatch depending on $MESH_ID"
+          # sbatch launchOF.sh --dependency=afterok:$MESH_ID
+          fi
      else
           cp -rf ../../mesh/* .
           ./CleanExceptMesh
@@ -72,6 +72,7 @@ function launch_sbatch_and_get_id() {
     ret=$(sbatch $script_name)
     ID=$(awk '{print $4}' <<< $ret)
     echo "Launched $ID"
+    echo $ID
     # return the id
     return $ID
 }
@@ -91,7 +92,7 @@ fi
      cd $alpha_dir
      # launch the mesh generation process
      # check if the mesh directory exist
-     if [ ! -d mesh ]; then
+     if [[ ! -d mesh ]]; then
           # first copy the mesh template and copy the content of common into the new dir
           # (
                echo "Generating mesh ..."
@@ -99,8 +100,7 @@ fi
                cp -r ../$template_dir/* mesh/.
                cp -r ../common/* mesh/.
                cd mesh
-               mesh_job_ID=$(generate_mesh)
-               # generate_mesh
+               generate_mesh
                cd ..
           # )
      # else just echo that we are skipping the mesh generation
@@ -114,14 +114,14 @@ fi
      echo "Running Re = $Re ..."
      Re_dir=Re_$Re
      # creat the directory if not exist
-     if [ ! -d $Re_dir ]; then
+     if [[ ! -d $Re_dir ]]; then
           mkdir $Re_dir
      fi
      cd $Re_dir
      for lambda in ${lambdas[@]}
      do
      dir="${case_Name}_Re_${Re}_alpha_${alpha}_lambda_${lambda}"
-     if [ -d $dir ]; then
+     if [[ -d $dir ]]; then
           echo "Directory $dir already exist, skipping ..."
           continue
      fi
@@ -131,7 +131,7 @@ fi
           echo "Re = $Re, alpha = $alpha, lambda=$lambda"
           # make sure that we setup the parameters correctly
           setup_parameters $Re $alpha $lambda
-          run_case $mesh_job_ID
+          run_case
      )
      done
      )

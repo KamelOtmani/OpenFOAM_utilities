@@ -3,7 +3,8 @@ renoldsStress1
     type        reynoldsStress;
     libs        (libreynoldsStressFunctionObject);
     // run only at the last iteration
-    executeControl writeTime;
+    executeControl onEnd;
+    writeControl onEnd;
     UName       U;
     log         yes;
 }

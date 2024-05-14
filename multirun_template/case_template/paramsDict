@@ -1,7 +1,7 @@
 
 // ----- MESH --------//
 // Coarse mesh = 80
-CellsPerDiameter                              10; // number of divisions
+CellsPerDiameter 15; // number of divisions
 CellsBetweenRefinementLevels    15; // snappy cells between leveles
 RefinementLevels    3; // snappy cells between leveles
 // ------------------//
