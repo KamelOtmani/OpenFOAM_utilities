@@ -1,0 +1,45 @@
+
+
+
+// ----- CASE PARAMETERS --------//
+alpha __alpha__;
+Re __Re__;
+NavierSlipLenght __lambda__;
+// ----- MESH --------//
+CellsPerDiameter __NCells__; // number of divisions
+CellsBetweenRefinementLevels 15; // snappy cells between leveles
+RefinementLevels 3; // snappy cells between leveles
+// ------------------//
+U_z                             1;
+d_b         1e-3;
+viscosity   #eval "$U_z * $d_b / $Re";
+
+//! lenght of the domain based on the volume_fraction and the bubble diameter
+// alpha = V_s / V_T
+//       = 4/3 pi (d_b/2)^2 / l^3
+// => l = (4/3 pi (d_b/2)^2 / alpha)^1/3
+l           #eval{pow((4/3)* pi()* pow($d_b/2,3) / $alpha,(1/3))}; 
+rhoInf      1;    // Fluid density used for force calculations
+
+calculateForces                 true;
+calculateForcesCoeffs           true;
+// 
+// l           20;//*d_b (m)   lenght of the box
+h           50;//*d_b (m)   height of the box
+center      #eval "$l/2.0";
+d_b_2       #eval "$d_b/2.0";
+// Nx          #calc"(int)(max(1.1 * $l /$d_b,($l * $CellsPerDiameter) /(pow(2,$RefinementLevels)*$d_b)))"; // number of cells per axis
+Nx          #calc"(int)($CellsPerDiameter * $l /($d_b*(pow(2,min($RefinementLevels,3)))))"; // number of cells per axis
+// ------------------//
+
+
+// ----- Solution --------//
+// tolerences
+relativeTol     0.01;
+Utol       1e-08;
+ptol       1e-08;
+// residues
+pres      1e-05;
+Ures      1e-05;
+NonOrthogonalCorrectors 3;
+// ------------------//
