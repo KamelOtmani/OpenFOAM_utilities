@@ -1,0 +1,119 @@
+#!/bin/sh
+cd "${0%/*}" || exit                                # Run from this directory
+. ${WM_PROJECT_DIR:?}/bin/tools/RunFunctions        # Tutorial run functions
+#------------------------------------------------------------------------------
+
+alpha=1e-2 # air volume fraction
+NCells=20 # number of cells per diameter
+Res=(1e-2 1e-3)
+Lambdas=(0 1)
+
+output_csv_filepath="results.csv"
+
+# replaces text in a file
+#  usage : replace_text file old_text new_text
+function replace_text() {
+     file=$1
+     old=$2
+     new=$3
+     sed -i "s/$old/$new/g" $file
+}
+
+#  replaces a token in the form of '__var__' by it's value in a file
+#  usage : replace_token_in_file paramsDict Re 10 (replaces __Re__ by 10 in paramsDict)
+function replace_token_in_file() {
+    local filename=$1
+    local variable=$2
+    local value=$3
+    local token="__${variable}__"
+    
+    # Check if file exists
+    if [ ! -f "$filename" ]; then
+        echo "File '$filename' not found."
+        return 1
+    fi
+    
+    # Replace token with value in the file
+    sed -i "s/$token/$value/g" "$filename"
+}
+
+# runs the meshing operation for a given alpha
+function run_meshing() {
+     # check if the mesh directory exists
+     if [[ -d "mesh" ]]; then
+          echo "mesh directory already exists, please remove if you want to remesh"
+          echo "Proceeding with the existing mesh ..."
+          return
+     fi
+     # copy the case
+     cp -r ../common/ mesh/
+     replace_token_in_file mesh/paramsDict "alpha" $alpha
+     replace_token_in_file mesh/paramsDict "NCells" $NCells
+     # replace Re and lambda with placeholders
+     replace_token_in_file mesh/paramsDict "Re" 1
+     replace_token_in_file mesh/paramsDict "lambda" 1
+     # run the meshing
+     ./mesh/PrepareCase
+     ./mesh/CleanExceptMesh
+}
+
+function run_case() {
+     local dir=$1
+     local Re=$2
+     local Lambda=$3
+     # check if we have a log.simpleFoam file or a postProcessing directory
+     if [[ -f $dir/log.simpleFoam ]] || [[ -d $dir/postProcessing ]]; then
+          echo "Case $dir already exists, skipping ..."
+          continue
+     fi
+     cp -r mesh/ $dir/
+     replace_text $dir/paramsDict "Re 1" "Re $Re"
+     replace_text $dir/paramsDict "NavierSlipLenght 1" "NavierSlipLenght $Lambda"
+     ./$dir/CleanExceptMesh
+     ./$dir/AllrunParallel
+}
+
+function run_post_processing() {
+     local dir=$1
+     local Re=$2
+     local Lambda=$3
+     # TODO(Kamel): implement the post processing
+     echo "Running post processing for ${dir}..."
+     # get the filepath of the wanted data
+     local force_filepath="$dir/postProcessing/forces/0/force.dat"
+     local reynolds_stress_filepath="$dir/postProcessing/forces/0/force.dat"
+     
+     ls -al $dir/postProcessing/forces/0/
+     # Get the last line of the file
+     force_last_line=$(tail -n 1 "$force_filepath")
+     reynolds_stress_last_line=$(tail -n 1 "$reynolds_stress_filepath")
+
+     # Append to CSV
+     echo "$alpha $Lambda $Re $force_last_line $reynolds_stress_last_line" >> "$output_csv_filepath"
+}
+
+
+function run_cases() {
+     for Re in ${Res[@]}; do
+          for Lambda in ${Lambdas[@]}; do
+               dir=Re_${Re}_lambda_${Lambda}
+               run_case $dir $Re $Lambda
+               run_post_processing $dir $Re $Lambda
+          done
+     done
+}
+
+function main(){
+     # backup the existing results
+     if [[ -f $output_csv_filepath ]]; then
+          mv $output_csv_filepath ${output_csv_filepath}.bak
+     fi
+     # create the header of the csv file
+     echo "alpha Lambda Re Time total_x total_y total_z pressure_x pressure_y pressure_z viscous_x viscous_y viscous_z time xx yy zz xy xz zy" > "$output_csv_filepath"
+     # run the meshing
+     run_meshing
+     # run the cases
+     run_cases
+}
+ 
+main
