@@ -1,140 +1,51 @@
 # !/bin/bash
 set -u # Treat unset variables as an error when substituting.
 # This script is used to generate the case for the ordered array of spheres
-# set the template for the name of the case (Re, alpha, lambda should will be appended)
-case_Name="ordered_array"
 Res=("1e-1" "1")
-alphas=("1e-2")
-# alphas=("0.5e-1")
+alphas=(1e-3 1e-4)
 lambdas=("0")
 # Res=("1e-2" "1e-2" "1" "5" "10" "20" "40")
 # alphas=("1e-6" "1e-4" "1e-3" "1e-2" "0.5e-1" "1e-1" "1.5e-1")
 # lambdas=("0" "1e-4" "1e-1")
-template_dir="case_template"
-sbatch_mode=true
-export MESH_ID=0
 
-# define a fuction that is run for each case that takes in the directory of the case
-function setup_parameters () {
-    local Re=$1
-    local alpha=$2
-    local lambda=$3
-    # replace the proper parameters
-    sed "s/Re 1e-2;/Re $Re;/g" -i paramsDict
-    sed "s/alpha 1e-4;/alpha $alpha;/g" -i paramsDict
-    sed "s/NavierSlipLenght 1e-2;/NavierSlipLenght $lambda;/g" -i paramsDict
+template_dir="case_collection_template"
+run_cases=false
+sbatch_mode=false
+
+function setup_parameters() {
+    # get the line where Res and lambda are defined
+    Res_line=$(grep -n "Res=" AllrunsParallel | cut -d: -f1)
+    lambdas_line=$(grep -n "Lambdas=" AllrunsParallel | cut -d: -f1)
+    # replace the values of Res and lambda in the Allruns File with the current values
+    sed -i "${Res_line}s/.*/Res=(${Res[*]})/" AllrunsParallel
+    sed -i "${lambdas_line}s/.*/Lambdas=(${lambdas[*]})/" AllrunsParallel
 }
 
-function generate_mesh () {
-     # update the alpha
-     sed "s/alpha 1e-4;/alpha $alpha;/g" -i paramsDict
-     # check if we are in sbatch mode
-     if [[ $sbatch_mode == true ]]; then
-          # launch the mesh generation and get the ID
-          # echo "launching sbatch depending on $mesh_job_id"
-          # ./PrepareCase
-          mesh_job_id=$(launch_sbatch_and_get_id launchOFOrderedMeshing.sh)
-          # mesh_job_id=3789
-          export MESH_ID=$mesh_job_id
-          echo "MESH_ID=$MESH_ID"
-     else
-          # launch the mesh generation
-          echo "Generating mesh locally"
-          ./PrepareCase
-     fi
-     # return $mesh_job_id
+function main() {
+    for alpha in ${alphas[@]} ; do
+        dir="alpha_${alpha}"
+        # check if the directory exists
+        if [[ -d $dir ]] ; then
+            echo "The directory $dir already exists. Skipping..."
+            continue
+        fi
+        echo "Creating the directory $dir"
+        cp -r $template_dir $dir
+        (
+            cd $dir
+            # replace the values of Res and lambda in the Allruns File
+            setup_parameters
+            # run the cases
+            if [[ "$run_cases" = true ]] ; then
+                if [[ "$sbatch_mode" = true ]] ; then
+                    sbatch launchCases.sh
+                else
+                    ./AllrunsParallel
+                fi
+            fi
+        )
+    done
 }
 
-function run_case () {
-     echo "PWD = $PWD"
-     mesh_job_ID=$MESH_ID
-     # check if we are in sbatch mode
-     if [[ $sbatch_mode == true ]]; then
-     # do we have a valid mesh job ID ?
-          if [[ $mesh_job_ID == 0 ]]; then
-               echo "Mesh already exist, launching ..."
-               # sbatch launchOF.sh
-          else
-          # launch the mesh generation and get the ID
-          # sbatch launchOF.sh --dependency=afterok:$mesh_job_ID
-          echo "launching sbatch depending on $MESH_ID"
-          # sbatch launchOF.sh --dependency=afterok:$MESH_ID
-          fi
-     else
-          cp -rf ../../mesh/* .
-          ./CleanExceptMesh
-          ./AllrunParallel
-     fi
-}
-
-function launch_sbatch_and_get_id() {
-     script_name=$1
-    ret=$(sbatch $script_name)
-    ID=$(awk '{print $4}' <<< $ret)
-    echo "Launched $ID"
-    echo $ID
-    # return the id
-    return $ID
-}
-# echo the number of cases to be run
 echo "Number of cases to be run: ${#Res[@]} x ${#alphas[@]} x ${#lambdas[@]} = $(( ${#Res[@]} * ${#alphas[@]} * ${#lambdas[@]} ))"
-
-for alpha in  ${alphas[@]}
-do
-echo "#########################################"
-echo "alpha = $alpha ..."
-echo "#########################################"
-alpha_dir=alpha_$alpha
-if [ ! -d $alpha_dir ]; then
-     mkdir $alpha_dir
-fi
-(
-     cd $alpha_dir
-     # launch the mesh generation process
-     # check if the mesh directory exist
-     if [[ ! -d mesh ]]; then
-          # first copy the mesh template and copy the content of common into the new dir
-          # (
-               echo "Generating mesh ..."
-               mkdir mesh
-               cp -r ../$template_dir/* mesh/.
-               cp -r ../common/* mesh/.
-               cd mesh
-               generate_mesh
-               cd ..
-          # )
-     # else just echo that we are skipping the mesh generation
-     else
-          echo "Mesh directory already exist, skipping ..."
-     fi
-
-     for Re in  ${Res[@]}
-     do
-     (
-     echo "Running Re = $Re ..."
-     Re_dir=Re_$Re
-     # creat the directory if not exist
-     if [[ ! -d $Re_dir ]]; then
-          mkdir $Re_dir
-     fi
-     cd $Re_dir
-     for lambda in ${lambdas[@]}
-     do
-     dir="${case_Name}_Re_${Re}_alpha_${alpha}_lambda_${lambda}"
-     if [[ -d $dir ]]; then
-          echo "Directory $dir already exist, skipping ..."
-          continue
-     fi
-     (
-          cp -r ../../$template_dir $dir
-          cd $dir
-          echo "Re = $Re, alpha = $alpha, lambda=$lambda"
-          # make sure that we setup the parameters correctly
-          setup_parameters $Re $alpha $lambda
-          run_case
-     )
-     done
-     )
-     done
-)
-done
+main
